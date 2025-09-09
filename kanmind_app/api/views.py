@@ -175,7 +175,7 @@ class TaskCommentListCreateView(generics.ListCreateAPIView):
             TaskComment.objects
             .filter(task=task)
             .select_related("author")
-            .order_by("created_at", "id")   # chronologisch
+            .order_by("created_at", "id")
         )
 
     def perform_create(self, serializer):
