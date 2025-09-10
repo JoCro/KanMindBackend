@@ -17,16 +17,16 @@ class BoardListSerializer(serializers.ModelSerializer):
                   'ticket_count', 'tasks_to_do_count', 'tasks_high_prio_count']
 
     def get_ticket_count(self, obj):
-        return 0
+        return obj.tasks.count()
 
     def get_member_count(self, obj):
-        return 0
+        return obj.members.count()
 
     def get_tasks_to_do_count(self, obj):
-        return 0
+        return obj.tasks.filter(status=Task.Status.TODO).count()
 
     def get_tasks_high_prio_count(self, obj):
-        return 0
+        return obj.tasks.filter(priority=Task.Priority.HIGH).count()
 
 
 class BoardCreateSerializer(serializers.ModelSerializer):
@@ -68,23 +68,16 @@ class BoardCreateSerializer(serializers.ModelSerializer):
         return board
 
     def get_member_count(self, obj):
-        return obj.members.count()
+        return getattr(obj, 'member_count', None) or obj.members.count()
 
     def get_ticket_count(self, obj):
-        return 0
+        return getattr(obj, 'ticket_count', None) or obj.tasks.count()
 
     def get_tasks_to_do_count(self, obj):
-        return 0
+        return getattr(obj, 'tasks_to_do_count', None) or obj.tasks.filter(status=Task.Status.TODO).count()
 
     def get_tasks_high_prio_count(self, obj):
-        return 0
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data["ticket_count"] = 0
-        data["tasks_to_do_count"] = 0
-        data["tasks_high_prio_count"] = 0
-        return data
+        return getattr(obj, 'tasks_high_prio_count', None) or obj.tasks.filter(priority=Task.Priority.HIGH).count()
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -111,7 +104,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
                   'assignee', 'reviewer', 'due_date', 'comments_count']
 
     def get_comments_count(self, obj):
-        return 0
+        return getattr(obj, 'comments_count', None) or obj.comments.count()
 
 
 class BoardDetailSerializer(serializers.ModelSerializer):
@@ -217,7 +210,7 @@ class TaskCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def get_comments_count(self, obj):
-        return 0
+        return getattr(obj, 'comments_count', None) or obj.comments.count()
 
 
 class TaskReadSerializer(serializers.ModelSerializer):
@@ -274,9 +267,6 @@ class TaskUpdateSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
-        if "board" in self.initial_data:
-            raise serializers.ValidationError(
-                {"board": "Änderungen des Boards sind nicht erlaubt."})
 
         board = self.instance.board
 

@@ -17,7 +17,21 @@ class BoardListCreateView(generics.ListCreateAPIView):
         return (
             Board.objects
             .filter(Q(owner=user) | Q(members=user))
-            .annotate(member_count=Count("members", distinct=True))
+            .select_related("owner")
+            .annotate(
+                member_count=Count("members", distinct=True),
+                ticket_count=Count("tasks", distinct=True),
+                tasks_to_do_count=Count(
+                    "tasks",
+                    filter=Q(tasks__status=Task.Status.TODO),
+                    distinct=True,
+                ),
+                tasks_high_prio_count=Count(
+                    "tasks",
+                    filter=Q(tasks__priority=Task.Priority.HIGH),
+                    distinct=True,
+                ),
+            )
             .distinct()
             .order_by("id")
         )
