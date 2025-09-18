@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from kanmind_app.models import Board, Task, TaskComment
 from django.contrib.auth.models import User
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 
 class BoardListSerializer(serializers.ModelSerializer):
@@ -31,8 +31,11 @@ class BoardListSerializer(serializers.ModelSerializer):
 
 class BoardCreateSerializer(serializers.ModelSerializer):
 
-    members = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(), many=True, write_only=True, required=False
+    members = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        write_only=True,
+        required=False,
+        allow_empty=True,
     )
 
     owner_id = serializers.IntegerField(source="owner.id", read_only=True)
@@ -43,41 +46,48 @@ class BoardCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Board
-
         fields = [
-            "id",
-            "title",
-            "members",
-            "member_count",
-            "ticket_count",
-            "tasks_to_do_count",
-            "tasks_high_prio_count",
+            "id", "title", "members",
+            "member_count", "ticket_count",
+            "tasks_to_do_count", "tasks_high_prio_count",
             "owner_id",
         ]
 
-    def create(self, validated_data):
+    def validate_members(self, member_ids):
+        if not member_ids:
+            return []
 
-        members = validated_data.pop("members", [])
-        validated_data.pop("owner", None)
+        ids = list(dict.fromkeys(int(i) for i in member_ids))
+        found = set(User.objects.filter(
+            id__in=ids).values_list("id", flat=True))
+        missing = sorted(set(ids) - found)
+        if missing:
+
+            raise serializers.ValidationError(
+                f"Die folgenden Benutzer-IDs existieren nicht: {missing}."
+            )
+        return ids
+
+    def create(self, validated_data):
+        member_ids = validated_data.pop("members", [])
 
         board = Board.objects.create(
             owner=self.context["request"].user, **validated_data)
-
-        if members:
-            board.members.set(members)
+        if member_ids:
+            board.members.set(User.objects.filter(id__in=member_ids))
         return board
 
     def get_member_count(self, obj):
-        return getattr(obj, 'member_count', None) or obj.members.count()
+        return getattr(obj, "member_count", None) or obj.members.count()
 
     def get_ticket_count(self, obj):
-        return getattr(obj, 'ticket_count', None) or obj.tasks.count()
+        return getattr(obj, "ticket_count", None) or obj.tasks.count()
 
     def get_tasks_to_do_count(self, obj):
-        return getattr(obj, 'tasks_to_do_count', None) or obj.tasks.filter(status=Task.Status.TODO).count()
+        return getattr(obj, "tasks_to_do_count", None) or obj.tasks.filter(status=Task.Status.TODO).count()
 
     def get_tasks_high_prio_count(self, obj):
-        return getattr(obj, 'tasks_high_prio_count', None) or obj.tasks.filter(priority=Task.Priority.HIGH).count()
+        return getattr(obj, "tasks_high_prio_count", None) or obj.tasks.filter(priority=Task.Priority.HIGH).count()
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
@@ -181,6 +191,11 @@ class TaskCreateSerializer(serializers.ModelSerializer):
         if not board:
             raise NotFound("Board nicht gefunden.")
         attrs["board"] = board
+
+        user = self.context["request"].user
+        if board.owner_id != user.id and not board.members.filter(id=user.id).exists():
+            raise PermissionDenied(
+                "Du musst Mitglied des Boards sein, um eine Task zu erstellen.")
 
         for key_in, key_out in (("assignee_id", "assignee"), ("reviewer_id", "reviewer")):
             uid = attrs.pop(key_in, None)
