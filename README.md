@@ -61,7 +61,7 @@
 
 ```bash
 # 1) Clone & enter
-git clone <https://github.com/JoCro/KanMindBackend.git>
+git clone https://github.com/JoCro/KanMindBackend.git
 cd KanMind
 
 # 2) Create & activate venv
