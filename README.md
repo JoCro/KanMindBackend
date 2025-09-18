@@ -12,6 +12,7 @@
 ---
 
 ## 🧭 Table of Contents
+
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
 - [Quickstart](#-quickstart)
@@ -28,6 +29,7 @@
 ---
 
 ## ✨ Features
+
 - 🔐 **Auth**
   - `POST /api/registration/` – create user, returns **Token**
   - `POST /api/login/` – login via email + password, returns **Token**
@@ -46,6 +48,7 @@
 ---
 
 ## 🛠 Tech Stack
+
 - **Python** 3.13+
 - **Django** 5.2+
 - **Django REST Framework** 3.15+
@@ -55,9 +58,10 @@
 ---
 
 ## ⚡ Quickstart
+
 ```bash
 # 1) Clone & enter
-git clone <your-repo-url>
+git clone <https://github.com/JoCro/KanMindBackend.git>
 cd KanMind
 
 # 2) Create & activate venv
@@ -76,14 +80,17 @@ python manage.py createsuperuser
 # 6) Run server
 python manage.py runserver
 ```
+
 > Browsable API login at `/api-auth/login/` (if `rest_framework.urls` is included).
 
 ---
 
 ## 🔑 Authentication
+
 We use **Token Authentication** (plus SessionAuth for the browsable API).
 
 **Register**
+
 ```http
 POST /api/registration/
 {
@@ -93,7 +100,9 @@ POST /api/registration/
   "repeated_password": "StrongPassword!"
 }
 ```
+
 **Response 201**
+
 ```json
 {
   "token": "<token>",
@@ -104,6 +113,7 @@ POST /api/registration/
 ```
 
 **Login**
+
 ```http
 POST /api/login/
 {
@@ -111,7 +121,9 @@ POST /api/login/
   "password": "StrongPassword!"
 }
 ```
+
 Use the token on subsequent requests:
+
 ```
 Authorization: Token <token>
 ```
@@ -121,7 +133,8 @@ Authorization: Token <token>
 ## 🔎 API at a Glance
 
 ### 🗂️ Boards
-- **List** – `GET /api/boards/` 
+
+- **List** – `GET /api/boards/`
   - Boards where you are **owner or member**
 - **Create** – `POST /api/boards/`
   ```json
@@ -132,17 +145,18 @@ Authorization: Token <token>
   ```json
   { "title": "Changed title", "members": [1, 54] }
   ```
-- **Delete** – `DELETE /api/boards/{id}/` *(owner only; cascades tasks & comments)*
+- **Delete** – `DELETE /api/boards/{id}/` _(owner only; cascades tasks & comments)_
 
 ### ✅ Tasks
+
 - **Create** – `POST /api/tasks/`
   ```json
   {
     "board": 12,
     "title": "Code review",
     "description": "Review PR",
-    "status": "review",             // to-do | in-progress | review | done
-    "priority": "medium",           // low | medium | high
+    "status": "review", // to-do | in-progress | review | done
+    "priority": "medium", // low | medium | high
     "assignee_id": 13,
     "reviewer_id": 1,
     "due_date": "2025-02-27"
@@ -154,18 +168,21 @@ Authorization: Token <token>
   - Read & update by board **members/owner**; **delete** by **creator** or **board owner**
 
 ### 💬 Comments
+
 - **List & Create** – `GET|POST /api/tasks/{task_id}/comments/`
   ```json
   { "content": "This needs a follow-up." }
   ```
-- **Delete** – `DELETE /api/tasks/{task_id}/comments/{comment_id}/` *(author only)*
+- **Delete** – `DELETE /api/tasks/{task_id}/comments/{comment_id}/` _(author only)_
 
 ### 👤 Users
-- **Email check** – `GET /api/email-check/?email=foo@bar.com` *(auth required)*
+
+- **Email check** – `GET /api/email-check/?email=foo@bar.com` _(auth required)_
 
 ---
 
 ## 🛡 Permissions & Rules
+
 - Public: `registration`, `login`
 - Boards: owner/member can view; **owner only** can delete
 - Tasks: create/update if **member/owner** of the board; delete by **creator** or **board owner**
@@ -175,6 +192,7 @@ Authorization: Token <token>
 ---
 
 ## 🧱 Data Model (simplified)
+
 - **User** – Django auth user
 - **Board**: `id`, `title`, `owner(FK:User)`, `members(M2M:User)`, `created_at`
 - **Task**: `id`, `board(FK)`, `title`, `description`, `status`, `priority`, `assignee(FK?)`, `reviewer(FK?)`, `due_date`, `created_by(FK)`, `created_at`
@@ -183,6 +201,7 @@ Authorization: Token <token>
 ---
 
 ## 🗂 Project Structure (excerpt)
+
 ```
 KanMind/
 ├─ kanmind_hub/                  # project settings & urls
@@ -205,8 +224,10 @@ KanMind/
 ---
 
 ## ⚙️ Environment & Settings
+
 - Add to `INSTALLED_APPS`: `rest_framework`, `rest_framework.authtoken`
 - Recommended DRF settings:
+
 ```python
 REST_FRAMEWORK = {
   "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -215,7 +236,9 @@ REST_FRAMEWORK = {
   ],
 }
 ```
+
 - Browsable API login in project urls:
+
 ```python
 path("/api-auth/", include("rest_framework.urls"))
 ```
@@ -223,6 +246,7 @@ path("/api-auth/", include("rest_framework.urls"))
 ---
 
 ## 🧪 Development Tips
+
 - Lock deps: `pip freeze > requirements.txt`
 - Run migrations early & often: `python manage.py migrate`
 - Don’t commit secrets: use `.env`, ignore `db.sqlite3`
@@ -231,9 +255,11 @@ path("/api-auth/", include("rest_framework.urls"))
 ---
 
 ## 🤝 Contributing
+
 PRs and issues are welcome! Please describe your change and include minimal steps to reproduce.
 
 ---
 
 ## 📄 License
+
 MIT (or your preferred license). Replace this section as needed.
