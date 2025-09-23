@@ -42,7 +42,7 @@ class BoardListCreateView(generics.ListCreateAPIView):
         return BoardListSerializer
 
     def perform_create(self, serializer):
-        board_instance = serializer.save(owner=self.request.user)
+        board_instance = serializer.save()
         board_instance.members.add(self.request.user)
 
 
