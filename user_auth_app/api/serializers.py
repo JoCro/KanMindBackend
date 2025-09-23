@@ -6,11 +6,14 @@ User = get_user_model()
 
 
 class RegistrationSerializer(serializers.Serializer):
+    """Serializer for user registration. It includes fields for fullname, email, password, and repeated_password. It validates that the passwords match and that the email is unique. It also creates a new user with a unique username based on the email prefix."""
     fullname = serializers.CharField(max_length=150)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, trim_whitespace=False)
     repeated_password = serializers.CharField(
         write_only=True, trim_whitespace=False)
+
+    """Custom validation to ensure passwords match and email is unique."""
 
     def validate(self, attrs):
         if attrs['password'] != attrs['repeated_password']:
@@ -20,6 +23,8 @@ class RegistrationSerializer(serializers.Serializer):
 
         password_validation.validate_password(attrs['password'])
         return attrs
+
+    """Create a new user with a unique username based on the email prefix."""
 
     def create(self, validated_data):
         fullname = validated_data['fullname'].strip()
@@ -49,8 +54,11 @@ class RegistrationSerializer(serializers.Serializer):
 
 
 class LoginSerializer(serializers.Serializer):
+    """Serializer for user login. It includes fields for email and password. It validates the credentials and returns the authenticated user."""
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    """Custom validation to authenticate the user based on email and password. It checks if the user exists, if the account is active, and if the password is correct."""
 
     def validate(self, attrs):
         email = attrs.get('email', '').strip()

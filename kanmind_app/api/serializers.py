@@ -5,6 +5,9 @@ from rest_framework.exceptions import NotFound, PermissionDenied
 
 
 class BoardListSerializer(serializers.ModelSerializer):
+    """
+Serializer for listing Boards. Includes methods to count members and tasks.
+"""
     member_count = serializers.SerializerMethodField()
     owner_id = serializers.IntegerField(source="owner.id", read_only=True)
     ticket_count = serializers.SerializerMethodField()
@@ -16,20 +19,39 @@ class BoardListSerializer(serializers.ModelSerializer):
         fields = ["id", "title", "member_count", "owner_id",
                   'ticket_count', 'tasks_to_do_count', 'tasks_high_prio_count']
 
+    """
+Retrieves the count of tickets for the board.
+"""
+
     def get_ticket_count(self, obj):
         return obj.tasks.count()
+
+    """
+retrieves the count of members for the board.
+"""
 
     def get_member_count(self, obj):
         return obj.members.count()
 
+    """
+    retrieves the count of tasks with status TODO for the board.
+"""
+
     def get_tasks_to_do_count(self, obj):
         return obj.tasks.filter(status=Task.Status.TODO).count()
+
+    """
+retrieves the count of tasks with high priority for the board.
+"""
 
     def get_tasks_high_prio_count(self, obj):
         return obj.tasks.filter(priority=Task.Priority.HIGH).count()
 
 
 class BoardCreateSerializer(serializers.ModelSerializer):
+    """
+Serializer for Board creation. Includes validation for member IDs and methods to count members and tasks.
+"""
 
     members = serializers.ListField(
         child=serializers.IntegerField(min_value=1),
@@ -53,6 +75,10 @@ class BoardCreateSerializer(serializers.ModelSerializer):
             "owner_id",
         ]
 
+    """
+    Validates the list of member IDs to ensure they exist in the User model.
+"""
+
     def validate_members(self, member_ids):
         if not member_ids:
             return []
@@ -68,6 +94,10 @@ class BoardCreateSerializer(serializers.ModelSerializer):
             )
         return ids
 
+    """
+    Creates a Board instance and assigns members if provided.
+"""
+
     def create(self, validated_data):
         member_ids = validated_data.pop("members", [])
 
@@ -77,14 +107,30 @@ class BoardCreateSerializer(serializers.ModelSerializer):
             board.members.set(User.objects.filter(id__in=member_ids))
         return board
 
+    """
+    Retrieves the count of members for the board.
+"""
+
     def get_member_count(self, obj):
         return getattr(obj, "member_count", None) or obj.members.count()
+
+    """
+    Retrieves the count of tickets for the board.
+"""
 
     def get_ticket_count(self, obj):
         return getattr(obj, "ticket_count", None) or obj.tasks.count()
 
+    """
+    Retrieves the count of tasks with status TODO for the board.
+"""
+
     def get_tasks_to_do_count(self, obj):
         return getattr(obj, "tasks_to_do_count", None) or obj.tasks.filter(status=Task.Status.TODO).count()
+
+    """
+    Retrieves the count of tasks with high priority for the board.
+"""
 
     def get_tasks_high_prio_count(self, obj):
         return getattr(obj, "tasks_high_prio_count", None) or obj.tasks.filter(priority=Task.Priority.HIGH).count()
@@ -92,11 +138,18 @@ class BoardCreateSerializer(serializers.ModelSerializer):
 
 class UserMinimalSerializer(serializers.ModelSerializer):
 
+    """
+Serializer for minimal User representation, including full name.
+"""
     fullname = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ['id', 'email', 'fullname']
+
+    """
+retrieves the full name of the user, falling back to username if not available.
+"""
 
     def get_fullname(self, obj):
         full = f"{(obj.first_name or '').strip()} {(obj.last_name or '').strip()}".strip()
@@ -104,6 +157,9 @@ class UserMinimalSerializer(serializers.ModelSerializer):
 
 
 class TaskDetailSerializer(serializers.ModelSerializer):
+    """
+Serializer for detailed Task representation, including assignee, reviewer, and comment count.
+"""
     assignee = UserMinimalSerializer(read_only=True)
     reviewer = UserMinimalSerializer(read_only=True)
     comments_count = serializers.SerializerMethodField()
@@ -113,11 +169,18 @@ class TaskDetailSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'status', 'priority',
                   'assignee', 'reviewer', 'due_date', 'comments_count']
 
+    """
+retrieves the count of comments for the task.
+"""
+
     def get_comments_count(self, obj):
         return getattr(obj, 'comments_count', None) or obj.comments.count()
 
 
 class BoardDetailSerializer(serializers.ModelSerializer):
+    """
+serializer for detailed Board representation, including owner, members, and tasks.
+"""
     owner_id = serializers.IntegerField(source="owner.id", read_only=True)
     members = UserMinimalSerializer(many=True, read_only=True)
     tasks = TaskDetailSerializer(many=True, read_only=True)
@@ -128,6 +191,9 @@ class BoardDetailSerializer(serializers.ModelSerializer):
 
 
 class BoardPatchSerializer(serializers.ModelSerializer):
+    """
+serializer for updating Board details, including title and members.
+"""
     members = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(), many=True, required=False, write_only=True)
 
@@ -138,6 +204,10 @@ class BoardPatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Board
         fields = ['id', 'title', 'members', 'owner_data', 'members_data']
+
+    """
+updates the Board instance with new title and members if provided. when updating members, it replaces the existing members with the new list. if no members are provided, the existing members remain unchanged.
+"""
 
     def update(self, instance, validated_data):
         if 'title' in validated_data:
@@ -151,10 +221,16 @@ class BoardPatchSerializer(serializers.ModelSerializer):
 
 
 class EmailCheckQuerySerializer(serializers.Serializer):
+    """
+serializer for validating email input.
+"""
     email = serializers.EmailField(required=True)
 
 
 class TaskCreateSerializer(serializers.ModelSerializer):
+    """
+Serializer for creating Tasks. Includes validation for board, assignee, and reviewer.
+"""
 
     board = serializers.IntegerField(
         write_only=True)
@@ -183,6 +259,10 @@ class TaskCreateSerializer(serializers.ModelSerializer):
             "due_date",
             "comments_count",
         ]
+
+    """
+    Validates the input data for creating a Task, ensuring the board exists and the user has permission to add tasks to it. Also validates assignee and reviewer if provided.
+"""
 
     def validate(self, attrs):
 
@@ -224,11 +304,18 @@ class TaskCreateSerializer(serializers.ModelSerializer):
 
         return attrs
 
+    """
+ retrieves the count of comments for the task.
+"""
+
     def get_comments_count(self, obj):
         return getattr(obj, 'comments_count', None) or obj.comments.count()
 
 
 class TaskReadSerializer(serializers.ModelSerializer):
+    """
+Serializer for reading Task details, including board ID, assignee, reviewer, and comment count.
+"""
     board = serializers.IntegerField(source='board.id', read_only=True)
     assignee = UserMinimalSerializer(read_only=True)
     reviewer = UserMinimalSerializer(read_only=True)
@@ -248,6 +335,9 @@ class TaskReadSerializer(serializers.ModelSerializer):
             "due_date",
             "comments_count",
         ]
+    """
+    retrieves the count of comments for the task. 
+"""
 
     def get_comments_count(self, obj):
         try:
@@ -257,6 +347,9 @@ class TaskReadSerializer(serializers.ModelSerializer):
 
 
 class TaskUpdateSerializer(serializers.ModelSerializer):
+    """
+Serializer for updating Task details, including assignee and reviewer validation.
+"""
     assignee_id = serializers.IntegerField(
         required=False, allow_null=True, write_only=True)
     reviewer_id = serializers.IntegerField(
@@ -281,10 +374,15 @@ class TaskUpdateSerializer(serializers.ModelSerializer):
 
         ]
 
+    """
+    Validates the input data for updating a Task, ensuring assignee and reviewer are valid users and members of the board. Also validates status and priority if provided.
+"""
+
     def validate(self, attrs):
 
         board = self.instance.board
 
+        """Helper function to resolve user IDs to User instances and validate membership. if the user ID is None, sets the corresponding field to None. If the user ID is invalid or the user is not a member of the board, raises a ValidationError."""
         def resolve_user(field_in, field_out):
             if field_in in attrs:
                 uid = attrs.pop(field_in)
@@ -313,6 +411,8 @@ class TaskUpdateSerializer(serializers.ModelSerializer):
                 {"priority": f"Ungültige Priority. Erlaubt: {sorted(valid_priority)}"})
         return attrs
 
+    """updates the Task instance with provided fields. Only fields present in the validated data are updated."""
+
     def update(self, instance, validated_data):
         for f in ('title', 'description', 'status', 'priority', 'due_date', 'assignee', 'reviewer'):
             if f in validated_data:
@@ -322,6 +422,7 @@ class TaskUpdateSerializer(serializers.ModelSerializer):
 
 
 class TaskCommentSerializer(serializers.ModelSerializer):
+    """Serializer for TaskComment, including author details and content validation."""
     author = serializers.SerializerMethodField()
 
     class Meta:
@@ -329,9 +430,13 @@ class TaskCommentSerializer(serializers.ModelSerializer):
         fields = ['id', 'created_at', 'author', 'content']
         read_only_fields = ['id', 'created_at', 'author']
 
+    """retrieves the author's full name or username for the comment."""
+
     def get_author(self, obj):
         full = f"{(obj.author.first_name or '').strip()} {(obj.author.last_name or '').strip()}".strip()
         return full or obj.author.username
+
+    """validates that the comment content is not empty or just whitespace."""
 
     def validate_content(self, value):
         if not value or not value.strip():

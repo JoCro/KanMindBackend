@@ -6,7 +6,10 @@ from .serializers import RegistrationSerializer, LoginSerializer
 
 
 class RegistrationView(APIView):
+    """View for user registration. It handles POST requests to create a new user and return an authentication token, fullname, email, and user ID"""
     permission_classes = [permissions.AllowAny]
+
+    """Handle POST request to register a new user and return an auth token and user details."""
 
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
@@ -27,7 +30,10 @@ class RegistrationView(APIView):
 
 
 class LoginView(APIView):
+    """View for user login. It handles POST requests to authenticate a user and return an authentication token, fullname, email, and user ID."""
     permission_classes = [permissions.AllowAny]
+
+    """Handle POST request to authenticate a user and return an auth token and user details."""
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
