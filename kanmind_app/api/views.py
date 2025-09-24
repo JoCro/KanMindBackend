@@ -22,8 +22,8 @@ class BoardListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     """
-returns a queryset of Boards where the requesting user is either the owner or a member.
-"""
+    returns a queryset of Boards where the requesting user is either the owner or a member.
+    """
 
     def get_queryset(self):
         user = self.request.user
@@ -51,7 +51,7 @@ returns a queryset of Boards where the requesting user is either the owner or a 
     """
     Returns the appropriate serializer class based on the HTTP method of the request.
     If the request method is POST, it returns BoardCreateSerializer for creating a new board.
-"""
+    """
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -59,7 +59,7 @@ returns a queryset of Boards where the requesting user is either the owner or a 
         return BoardListSerializer
     """
     When creating a new board, this method saves the board instance and adds the requesting user as a member.
-"""
+    """
 
     def perform_create(self, serializer):
         board_instance = serializer.save()
@@ -82,7 +82,7 @@ class BoardDetailUpdateView(generics.RetrieveUpdateDestroyAPIView):
     Returns the appropriate serializer class based on the HTTP method of the request.
     If the request method is PUT or PATCH, it returns BoardPatchSerializer for updating the board.
     Otherwise, it returns BoardDetailSerializer for retrieving board details.
-"""
+    """
 
     def get_serializer_class(self):
         if self.request.method in ['PUT', 'PATCH']:
@@ -93,7 +93,7 @@ class BoardDetailUpdateView(generics.RetrieveUpdateDestroyAPIView):
     Retrieves a Board object based on the provided primary key (pk) in the URL.
     It checks if the requesting user is either the owner or a member of the board.
     If the board does not exist or the user does not have permission, it raises appropriate exceptions
-"""
+    """
 
     def get_object(self):
         pk = self.kwargs.get(self.lookup_url_kwarg)
@@ -115,7 +115,7 @@ class BoardDetailUpdateView(generics.RetrieveUpdateDestroyAPIView):
     """
     Deletes the specified Board instance if the requesting user is the owner.
     If the user is not the owner, it raises a PermissionDenied exception.
-"""
+    """
 
     def perform_destroy(self, instance: Board):
         if instance.owner_id != self.request.user.id:
@@ -136,7 +136,7 @@ class EmailCheckView(APIView):
     """
     Handles GET requests to check if a user with the provided email exists.
     If found, returns minimal user information; otherwise, raises a NotFound exception.
-"""
+    """
 
     def get(self, request):
         q = EmailCheckQuerySerializer(data=request.query_params)
@@ -165,7 +165,7 @@ class TaskCreateView(generics.CreateAPIView):
     """
     Validates and saves a new Task instance, ensuring that the requesting user is either a member or the owner of the associated board.
     Raises PermissionDenied if the user does not have the required permissions.
-"""
+    """
 
     def perform_create(self, serializer):
         board = serializer.validated_data['board']
@@ -189,7 +189,7 @@ class AssignedTasksView(generics.ListAPIView):
 
     """
     Returns a queryset of Tasks that are assigned to the requesting user, ordered by due date and ID.
-"""
+    """
 
     def get_queryset(self):
         user = self.request.user
@@ -212,7 +212,7 @@ class ReviewingTasksView(generics.ListAPIView):
 
     """
     Returns a queryset of Tasks that the requesting user is reviewing, ordered by due date and ID.
-"""
+    """
 
     def get_queryset(self):
         user = self.request.user
@@ -237,10 +237,10 @@ class TaskDetailUpdateView(generics.RetrieveUpdateDestroyAPIView):
     lookup_url_kwarg = "pk"
 
     """
- retrieves a Task object based on the provided primary key (pk) in the URL.
+    retrieves a Task object based on the provided primary key (pk) in the URL.
     It checks if the requesting user is either the owner or a member of the board associated with the task.
     If the task does not exist or the user does not have permission, it raises appropriate exceptions
-"""
+    """
 
     def get_object(self):
         pk = self.kwargs.get(self.lookup_url_kwarg)
@@ -262,7 +262,7 @@ class TaskDetailUpdateView(generics.RetrieveUpdateDestroyAPIView):
     """
     Deletes the specified Task instance if the requesting user is either the creator of the task or the owner of the associated board.
     If the user does not have the required permissions, it raises a PermissionDenied exception.
-"""
+    """
 
     def perform_destroy(self, instance: Task):
         user = self.request.user
@@ -291,7 +291,7 @@ class TaskCommentListCreateView(generics.ListCreateAPIView):
     """
     Helper method to retrieve a Task object and check if the requesting user has permission to access it.
     Raises NotFound if the task does not exist and PermissionDenied if the user is neither the owner nor a member of the associated board.
-"""
+    """
 
     def _get_task_or_404_checked(self):
         task_id = self.kwargs.get(
@@ -309,7 +309,7 @@ class TaskCommentListCreateView(generics.ListCreateAPIView):
 
     """
     Returns a queryset of TaskComments associated with the specified Task, ensuring the requesting user has permission to view them.
-"""
+    """
 
     def get_queryset(self):
         task = self._get_task_or_404_checked()
@@ -322,7 +322,7 @@ class TaskCommentListCreateView(generics.ListCreateAPIView):
 
     """
     Validates and saves a new TaskComment instance, associating it with the specified Task and setting the author to the requesting user.
-"""
+    """
 
     def perform_create(self, serializer):
         task = self._get_task_or_404_checked()
@@ -343,7 +343,7 @@ class TaskCommentDestroyView(generics.DestroyAPIView):
     Retrieves a TaskComment object based on the provided task_id and comment_id in the URL.
     It checks if the requesting user is the author of the comment.
     If the task or comment does not exist, or if the user is not the author, it raises appropriate exceptions.
-"""
+    """
 
     def get_object(self):
         task_id = self.kwargs.get(self.lookup_url_kwarg_task)
