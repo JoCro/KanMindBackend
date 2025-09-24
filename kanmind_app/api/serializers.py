@@ -2,6 +2,7 @@ from rest_framework import serializers
 from kanmind_app.models import Board, Task, TaskComment
 from django.contrib.auth.models import User
 from rest_framework.exceptions import NotFound, PermissionDenied
+from collections import OrderedDict
 
 
 class BoardListSerializer(serializers.ModelSerializer):
@@ -303,6 +304,15 @@ Serializer for creating Tasks. Includes validation for board, assignee, and revi
                 {"priority": f"Ungültige Priority. Erlaubt: {sorted(valid_priority)}"})
 
         return attrs
+
+    def to_representation(self, instance):
+        """Custom representation to include board ID instead of nested object."""
+        data = super().to_representation(instance)
+        data['board'] = instance.board_id
+
+        order = ['id', 'board', 'title', 'description', 'status', 'priority',
+                 'assignee', 'reviewer', 'due_date', 'comments_count']
+        return OrderedDict((k, data.get(k)) for k in order if k in data)
 
     """
  retrieves the count of comments for the task.
