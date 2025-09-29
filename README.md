@@ -204,7 +204,7 @@ Authorization: Token <token>
 
 ```
 KanMind/
-├─ kanmind_hub/                  # project settings & urls
+├─ core/                  # project settings & urls
 ├─ kanmind_app/
 │  ├─ models.py                  # Board, Task, TaskComment
 │  ├─ api/
